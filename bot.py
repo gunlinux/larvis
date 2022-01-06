@@ -1,7 +1,9 @@
 from twitchio.ext import commands
-from secrets import ACCESS_TOKEN
+from secrets import ACCESS_TOKEN, DTOKEN
 import random
 import asyncio
+import json
+from donationalerts_api.asyncio_api import sio
 
 
 class Bot(commands.Bot):
@@ -30,16 +32,43 @@ class Bot(commands.Bot):
         rez = 'орла' if random.randint(0, 1) else 'решку'
         await ctx.send(f'Монета легла на {rez}!')
 
+    @commands.command()
+    async def ssend(self, mssg, ctx: commands.Context):
+        await ctx.send(mssg)
 
-async def wtf():
-    print('started wtf')
-    while(True):
-        await asyncio.sleep(3)
-        print('sleep more')
+
+ioloop = asyncio.get_event_loop()
+bot = Bot(loop=ioloop)
+
+
+@sio.on("connect")
+async def on_connect():
+    print('connect event')
+    await sio.emit("add-user", {"token": DTOKEN,
+                   "type": "alert_widget"})
+
+
+async def sendmsg(mssg, channel="gunlinux"):
+    chan = bot.get_channel(channel)
+    await chan.send(mssg)
+
+
+@sio.on("donation")
+async def on_message(data):
+    print('donation event')
+    data = json.loads(data)
+    mssg = f"""О боги, да {data['username']} задонатил
+целых {data['amount']} {data['currency']} {data['message']}"""
+    print(mssg)
+    await sendmsg(mssg)
+
+
+async def donationalerts_connect():
+    print('wtf start')
+    await sio.connect("wss://socket.donationalerts.ru:443",
+                      transports="websocket")
 
 
 if __name__ == '__main__':
-    ioloop = asyncio.get_event_loop()
-    bot = Bot(loop=ioloop)
-    ioloop.create_task(wtf())
+    ioloop.create_task(donationalerts_connect())
     bot.run()
