@@ -37,7 +37,8 @@ class Bot(commands.Bot):
         await ctx.send(mssg)
 
 
-ioloop = asyncio.get_event_loop()
+ioloop = asyncio.new_event_loop()
+asyncio.set_event_loop(ioloop)
 bot = Bot(loop=ioloop)
 
 
