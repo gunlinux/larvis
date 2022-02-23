@@ -9,6 +9,7 @@ class DonationApiSpace(socketio.AsyncClientNamespace):
         self.token = token
         super().__init__(namespace=None)
 
+
     async def sendmsg(self, message):
         print('send message')
         chan = self.bot.get_channel(self.channel)
